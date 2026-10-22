@@ -1,0 +1,5 @@
+import { getPosts, getSettings } from '@/lib/db';
+import { postExcerpt, postUrl } from '@/lib/utils';
+export const dynamic = 'force-dynamic';
+const xml = (s: string) => s.replace(/[<>&'"\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c] || ''));
+export function GET(request: Request) { const settings = getSettings(), site = (settings.siteUrl || new URL(request.url).origin).replace(/\/$/, ''); return new Response(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>${xml(settings.title)}</title><link>${xml(site)}</link><description>${xml(settings.description)}</description><language>zh-CN</language>${getPosts().slice(0, 30).map(p => `<item><title>${xml(p.title)}</title><link>${xml(site + postUrl(p))}</link><guid isPermaLink="true">${xml(site + postUrl(p))}</guid><pubDate>${new Date(p.createdAt * 1000).toUTCString()}</pubDate><description>${xml(postExcerpt(p).slice(0, 500))}</description></item>`).join('')}</channel></rss>`, { headers: { 'Content-Type': 'application/rss+xml; charset=utf-8', 'Cache-Control': 'public, max-age=300' } }); }

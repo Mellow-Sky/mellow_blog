@@ -1,0 +1,38 @@
+/node_modules/
+/.next/
+/out/
+/coverage/
+
+# Private runtime data and uploaded files
+/data/
+/public/uploads/
+/public/usr/
+*.db
+*.db-*
+*.sqlite*
+*.sql
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.bak
+*.backup
+*.pem
+*.key
+!/scripts/schema.sql
+
+# Commit examples only; real environment files contain secrets
+.env*
+!.env.example
+!.env.production.example
+
+# Local tooling, caches and generated reports
+*.tsbuildinfo
+__pycache__/
+*.pyc
+*.log
+/docs/screenshots/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

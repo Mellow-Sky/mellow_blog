@@ -1,0 +1,39 @@
+.stack { display: grid; gap: 24px; min-width: 0; }
+.linkList { display: grid; gap: 14px; min-width: 0; }
+.linkRow { min-width: 0; margin: 0; padding: 16px; border: 1px solid var(--admin-line, #e2ecee); border-radius: 10px; background: #fbfdfd; }
+.linkRow legend { padding: 0 7px; color: #526770; font-size: 14px; }
+.linkRow :global(input:not([type='checkbox'])) { background: #fff !important; }
+.rowHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.rowHeading strong { min-width: 0; overflow-wrap: anywhere; color: #526770; font-size: 15px; font-weight: 550; }
+.rowActions { display: flex; flex: 0 0 auto; gap: 2px; }
+.rowActions button:disabled { opacity: .4; cursor: default; }
+.rowOptions { display: flex; flex-wrap: wrap; gap: 14px 22px; margin-top: 14px; }
+.rowOptions :global(.admin-checkbox) { margin: 0; }
+.addRow { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.addRow > label { flex: 1 1 200px; }
+.addRow select { width: 100%; }
+.empty { margin: 0; padding: 20px; border: 1px dashed #bdd7de; border-radius: 10px; color: #526770; font-size: 15px; }
+.switchGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 28px; }
+.switchGrid > label { min-width: 0; }
+.labelFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.labelFields label { min-width: 0; }
+.sectionNote { margin: 0; color: #526770; font-size: 14px; line-height: 1.8; }
+.sectionNote code { padding: 2px 5px; border-radius: 4px; background: #eff6f7; color: #365962; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.account { display: grid; gap: 10px; min-width: 0; padding: 18px; border: 1px solid var(--admin-line, #e2ecee); border-radius: 10px; background: #f5fafb; }
+.account p { margin: 0; color: #526770; font-size: 15px; line-height: 1.8; overflow-wrap: anywhere; }
+.account strong { color: #365962; }
+.account small { display: block; }
+.account a { color: #276b7c; text-decoration: underline; text-underline-offset: 3px; }
+.danger { color: #9a4841 !important; }
+.loading { display: flex; align-items: center; gap: 10px; color: #526770; font-size: 15px; }
+.inlineSave { display: flex; justify-content: flex-start; padding-top: 4px; }
+.secretInput { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.credentialLink { align-self: flex-start; }
+@media (max-width: 650px) {
+  .switchGrid, .labelFields { grid-template-columns: 1fr; }
+  .linkRow { padding: 12px; }
+  .rowHeading { align-items: flex-start; }
+  .addRow > button { width: 100%; justify-content: center; }
+  .actions > button { flex: 1 1 150px; justify-content: center; }
+}
