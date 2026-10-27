@@ -1,0 +1,10 @@
+.recovery { display: grid; gap: 10px; padding: 18px 20px; margin-bottom: 20px; border: 1px solid #c9e1e8; border-radius: 10px; background: #f2f9fb; color: #365762; }
+.recovery p { margin: 0; font-size: 14px; line-height: 1.7; }
+.recovery strong { font-size: 16px; }
+.recovery .warning { color: #a05c24; }
+.localStatus { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 18px; color: #66838d; font-size: 13px; }
+.localStatus strong { font-weight: 500; }
+.localError { color: #b25c4b; }
+.shortcutSubmit { display: none; }
+.fields { min-width: 0; padding: 0; margin: 0; border: 0; }
+.dateHint { font-size: 12px; color: #7f959d; line-height: 1.7; }

@@ -9,6 +9,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { remarkSafeMdx } from '@/lib/mdx-safety';
 import { headingId } from '@/lib/utils';
+import { withoutSummaryMarkers } from '@/lib/markdown-summary';
 function textFromChildren(children: ReactNode): string {
   if (typeof children === 'string' || typeof children === 'number') return String(children);
   if (Array.isArray(children)) return children.map(textFromChildren).join('');
@@ -29,7 +30,7 @@ export async function ArticleContent({ source, format }: { source: string; forma
   if (format !== 'mdx') return <MarkdownContent source={source} />;
   try {
     if (source.length > 300000) throw new Error('MDX 超出长度限制');
-    const { default: Content } = await evaluate(source, { ...runtime, remarkPlugins: [remarkGfm, remarkSafeMdx], rehypePlugins: [[rehypeHighlight, { detect: false, ignoreMissing: true }]] });
+    const { default: Content } = await evaluate(withoutSummaryMarkers(source), { ...runtime, remarkPlugins: [remarkGfm, remarkSafeMdx], rehypePlugins: [[rehypeHighlight, { detect: false, ignoreMissing: true }]] });
     return <Content components={{ ...components, Callout, Note: Callout }} />;
   } catch {
     return <><div className="content-callout">这篇 MDX 包含不受支持的语法，已以安全 Markdown 显示。</div><MarkdownContent source={source} /></>;

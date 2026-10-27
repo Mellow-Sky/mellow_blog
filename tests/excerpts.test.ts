@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanExcerpt, postExcerpt } from '../src/lib/utils';
+import { withoutSummaryMarkers } from '../src/lib/markdown-summary';
 
 // Synthetic Markdown and generated previews exercise compatibility without real posts.
 const articleSample = {
@@ -77,4 +78,17 @@ test('旧自动摘要按 Unicode 字符精确匹配，不误判只有共同开�
   const authored = '手写摘要带图片说明';
   assert.equal(postExcerpt({ excerpt: authored, content: `正文内容 ${authored}` }), authored);
   assert.equal(postExcerpt({ ...articleSample, excerpt: `${articleSample.excerpt} 新增说明` }), `${articleSample.excerpt} 新增说明`);
+});
+
+test('正文摘要分隔线只截取其前的简介，代码示例和手写简介不受影响', () => {
+  assert.equal(postExcerpt({ excerpt: '', content: '简介 **前文**\n\n<!--more-->\n\n完整正文' }), '简介 前文');
+  assert.equal(postExcerpt({ excerpt: '手写简介', content: '前文\n<!--more-->\n后文' }), '手写简介');
+  assert.equal(postExcerpt({ excerpt: '', content: '前文\n```html\n<!--more-->\n```\n后文' }), '前文 后文');
+  assert.equal(postExcerpt({ excerpt: '', content: '前文 `<!--more-->` 后文' }), '前文 <!--more--> 后文');
+});
+
+test('MDX 摘要线在渲染前移除，但围栏内与行内代码的标记保持原样', () => {
+  const source = '简介\n<!--more-->\n正文\n```html\n<!--more-->\n```\n`<!--more-->`';
+  assert.equal(withoutSummaryMarkers(source), '简介\n\n正文\n```html\n<!--more-->\n```\n`<!--more-->`');
+  assert.equal(withoutSummaryMarkers('~~~~md\n```\n<!--more-->\n~~~~\n<!--more-->\n结束'), '~~~~md\n```\n<!--more-->\n~~~~\n\n结束');
 });

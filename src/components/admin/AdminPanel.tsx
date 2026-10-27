@@ -73,7 +73,7 @@ export default function AdminPanel() {
   }
 
   if (!session) return <div className="admin-root admin-loading"><Waves size={36} /><p>{error || '加载中…'}</p>{error ? <button className="admin-button" onClick={() => location.reload()}>重新加载</button> : <LoaderCircle className="admin-spin" size={20} />}</div>;
-  if (!session.authenticated) return <AuthScreen setup={session.needsSetup} onAuthenticated={async () => { setSession({ authenticated: true, needsSetup: false }); try { await refresh(); } catch (reason) { setError((reason as Error).message); } }} />;
+  if (!session.authenticated) return <AuthScreen setup={session.needsSetup} onAuthenticated={async () => { setSession(await adminApi<Session>('/api/auth/session')); try { await refresh(); } catch (reason) { setError((reason as Error).message); } }} />;
 
   const waiting = data?.comments.filter(comment => comment.status === 'waiting').length || 0;
   const current = navigation.find(item => item.id === tab)!;
@@ -90,7 +90,7 @@ export default function AdminPanel() {
       <main id="admin-main" className="admin-main" tabIndex={-1}>
         {!data ? <div className="admin-empty"><LoaderCircle className={error ? '' : 'admin-spin'} /><h2>{error || '正在加载站点数据'}</h2>{error && <button className="admin-button" onClick={() => refresh().catch(reason => setError(reason.message))}>重试</button>}</div> : <>
           {tab === 'dashboard' && <Dashboard data={data} onNavigate={navigate} onWrite={writePost} />}
-          {(tab === 'posts' || tab === 'pages') && <AdminPosts key={tab} posts={data.posts} taxonomies={data.taxonomies} media={data.media} type={tab === 'pages' ? 'page' : 'post'} initialNew={newPost} initialEditId={editId} onDirtyChange={setUnsaved} refresh={refresh} notify={notify} />}
+          {(tab === 'posts' || tab === 'pages') && <AdminPosts username={session.username || ''} key={tab} posts={data.posts} taxonomies={data.taxonomies} media={data.media} type={tab === 'pages' ? 'page' : 'post'} initialNew={newPost} initialEditId={editId} onDirtyChange={setUnsaved} refresh={refresh} notify={notify} />}
           {tab === 'comments' && <AdminComments comments={data.comments} posts={data.posts} refresh={refresh} notify={notify} />}
           {tab === 'taxonomies' && <AdminTaxonomies taxonomies={data.taxonomies} refresh={refresh} notify={notify} />}
           {tab === 'media' && <AdminMedia media={data.media} refresh={refresh} notify={notify} />}

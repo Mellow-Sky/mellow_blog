@@ -170,5 +170,6 @@ function legacyGeneratedExcerpt(content: string) {
 /** Respect authored summaries and regenerate only an exact match for an old automatic preview. */
 export function postExcerpt(post: Pick<Post, 'excerpt' | 'content'>) {
   const automatic = post.excerpt && post.excerpt === legacyGeneratedExcerpt(post.content);
-  return cleanExcerpt(automatic || !post.excerpt.trim() ? post.content : post.excerpt);
+  const summary = withoutFencedCode(post.content.replace(/\r\n?/g, '\n')).split(/^ {0,3}<!--more-->[ \t]*$/m)[0];
+  return cleanExcerpt(automatic || !post.excerpt.trim() ? summary : post.excerpt);
 }
