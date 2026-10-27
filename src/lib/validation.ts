@@ -8,7 +8,7 @@ const navigationItems=z.array(z.object({...linkFields,visible:z.boolean()}).stri
 const footerLinks=z.array(z.object(linkFields).strict()).max(20).refine(items=>new Set(items.map(i=>i.id)).size===items.length,'链接编号不能重复');
 const labelShape=Object.fromEntries(Object.entries(DEFAULT_LABELS).map(([key,value])=>[key,z.string().trim().min(1).max(key==='searchPlaceholder'?100:60).default(value)])) as {[K in keyof typeof DEFAULT_LABELS]:z.ZodDefault<z.ZodString>};
 const safeUrl = z.string().max(2048).refine(v=>!v || /^\/(?!\/)/.test(v) || /^https?:\/\//i.test(v),'仅允许 HTTP(S) 或本站相对地址');
-const slug = z.string().trim().min(1).max(180).refine(v=>!/[/?#\\\u0000-\u001f]/.test(v)&&v!=='.'&&v!=='..','链接标识包含无效字符');
+const slug = z.string().trim().min(1).max(180).refine(v=>v.isWellFormed()&&!/[/?#\\\u0000-\u001f]/.test(v)&&v!=='.'&&v!=='..','链接标识包含无效字符');
 export const postSchema=z.object({
  title:z.string().trim().min(1).max(300),slug,content:z.string().max(1_000_000),excerpt:z.string().max(5000).optional(),
  createdAt:z.number().int().nonnegative().optional(),status:z.enum(['publish','draft','private']),type:z.enum(['post','page']),

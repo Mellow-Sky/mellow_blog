@@ -24,5 +24,5 @@ export function sizeLabel(bytes: number) {
 export type Notify = (message: string, error?: boolean) => void;
 
 export function generatedSlug(value: string) {
-  return value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[/?#\\\u0000-\u001f]/g, '').slice(0, 160) || `story-${Date.now()}`;
+  return value.toWellFormed().trim().toLowerCase().replace(/\s+/g, '-').replace(/[/?#\\\u0000-\u001f]/g, '').slice(0, 160).replace(/[\ud800-\udbff]$/, '') || `story-${Date.now()}`;
 }

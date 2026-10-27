@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> { c
 export default async function Page({ params }: Props) {
   const post = getPost(decodePageSlug((await params).slug));
   if (!post || post.type !== 'page') notFound();
-  if (post.slug === 'music' || post.id === 6) redirect('/music');
+  if (post.slug === 'music') redirect('/music');
   const settings = getSettings();
   return <div className="page-container simple-page"><ReadingProgress /><div className="breadcrumb"><Link href="/">首页</Link><span>/</span><span>{post.title}</span></div><header className="page-heading"><h1>{post.title}</h1></header><article className="article-prose"><ArticleContent source={post.content} format={post.format} /></article><Comments labels={settings.labels} postId={post.id} comments={getComments(post.id)} enabled={post.allowComment && settings.commentsEnabled} /></div>;
 }

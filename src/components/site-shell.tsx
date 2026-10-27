@@ -11,6 +11,7 @@ import { MusicPlayer } from './music-player';
 import { isBrandingImageSource } from '@/lib/branding';
 import { formatCopyright, visibleSiteLinks } from '@/lib/site-customization';
 import { SiteLink } from './site-link';
+import { isCurrentSitePath } from '@/lib/urls';
 
 export type SearchEntry = { title: string; url: string; category: string; excerpt: string };
 function Brand({ title, subtitle, logo = '', compact = false }: { title: string; subtitle?: string; logo?: string; compact?: boolean }) {
@@ -75,7 +76,7 @@ export function SiteShell({ children, settings, entries }: { children: ReactNode
     <header className={`site-header${useMenu ? ' has-menu' : ''}`}><div className="header-inner">
       <Brand title={settings.title} subtitle={settings.subtitle} logo={settings.logo} />
       <nav className={`main-nav ${mobile ? 'is-open' : ''}`} aria-label="主要导航">
-        {navigation.map(item => <SiteLink key={item.id} href={item.href} newTab={item.newTab} onClick={() => setMobile(false)} className={pathname === item.href.split(/[?#]/)[0] ? 'active' : ''} aria-current={pathname === item.href.split(/[?#]/)[0] ? 'page' : undefined}>{item.label}</SiteLink>)}
+        {navigation.map(item => { const active = isCurrentSitePath(pathname, item.href); return <SiteLink key={item.id} href={item.href} newTab={item.newTab} onClick={() => setMobile(false)} className={active ? 'active' : ''} aria-current={active ? 'page' : undefined}>{item.label}</SiteLink>; })}
       </nav>
       <div className="header-actions">{settings.showSearch && <button className="search-trigger" onClick={() => setSearch(true)} aria-label={labels.search}><Search size={17} /><span>{labels.search}</span><kbd>⌘ K</kbd></button>}{settings.showThemeToggle && <button className="icon-button theme-toggle" onClick={() => setMode(resolvedMode === 'dark' ? 'light' : 'dark')} aria-label={resolvedMode === 'dark' ? '切换浅色模式' : '切换深色模式'}>{resolvedMode === 'dark' ? <Sun size={19} /> : <Moon size={19} />}</button>}{navigation.length > 0 && <button className="icon-button mobile-menu" onClick={() => setMobile(!mobile)} aria-expanded={mobile} aria-label="展开导航">{mobile ? <X size={20} /> : <Menu size={20} />}</button>}</div>
     </div></header>

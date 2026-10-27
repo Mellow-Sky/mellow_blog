@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Check, Copy, List, MessageCircle } from 'lucide-react';
 import { DEFAULT_LABELS, type SiteLabels } from '@/lib/site-customization';
 import { headingId } from '@/lib/utils';
+import { toReadableUrl } from '@/lib/urls';
 export function TableOfContents({ content, labels = DEFAULT_LABELS }: { content: string; labels?: SiteLabels }) {
   const headings = [...content.replace(/```[\s\S]*?```/g, '').matchAll(/^(#{1,3})\s+(.+)$/gm)].map(m => ({ text: m[2].replace(/[*`]/g, ''), id: headingId(m[2].replace(/[*`]/g, '')), level: m[1].length }));
   const [active, setActive] = useState('');
@@ -16,6 +17,6 @@ export function TableOfContents({ content, labels = DEFAULT_LABELS }: { content:
 }
 export function ArticleActions({ labels = DEFAULT_LABELS }: { labels?: SiteLabels }) {
   const [copied, setCopied] = useState(false);
-  async function copy() { try { await navigator.clipboard.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {} }
+  async function copy() { try { await navigator.clipboard.writeText(toReadableUrl(window.location.href)); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {} }
   return <div className="article-actions"><a href="#comments"><MessageCircle size={15} /> {labels.commentsTitle}</a><button onClick={copy}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? labels.linkCopied : labels.copyLink}</button></div>;
 }

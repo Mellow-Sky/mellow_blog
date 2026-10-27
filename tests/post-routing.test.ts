@@ -53,6 +53,7 @@ before(() => {
     if (previous) require.cache[contentPath] = previous;
     else delete require.cache[contentPath];
   }
+  getDb().prepare("INSERT INTO posts(id,title,slug,content,created_at,updated_at,status,type) VALUES(6,?,?,?,1,1,'publish','page')").run('第六个中文页面', '第六个中文页面', 'Synthetic independent page.');
   for (const type of ['post', 'page'] as const) {
     for (const slug of samples) {
       published.push(savePost(postSchema.parse({ title: `${type} ${slug}`, slug: `${type}-${slug}`, content: 'Synthetic published content.', type, status: 'publish', category: '中文分类' })));
@@ -66,8 +67,8 @@ test('首页发布后的中文自动路径可以通过编码链接打开文章',
   const post = savePost(postSchema.parse({ title, slug: generatedSlug(title), content: 'Published after startup.', status: 'publish', type: 'post' }));
   assert.ok(getPosts().some(item => item.id === post.id));
   const url = postUrl(post);
-  assert.equal(url, `/posts/${encodeURIComponent(post.slug)}`);
-  const page = await ArticlePage(params(url.slice('/posts/'.length)));
+  assert.equal(url, `/posts/${post.slug}`);
+  const page = await ArticlePage(params(new URL(url, 'https://example.com').pathname.slice('/posts/'.length)));
   assert.deepEqual(headings(page), [title]);
 });
 
@@ -96,6 +97,11 @@ test('页面路径解码不递归处理百分号序列，异常编码不会抛�
 test('中文分类链接解码后与分类名称匹配', async () => {
   const page = await CategoryPage(params(encodeURIComponent('中文分类')));
   assert.deepEqual(initialCategories(page), ['中文分类']);
+});
+
+test('中文独立页面按自身路径打开，不因编号是6而跳转音乐页', async () => {
+  const page = await IndependentPage(params(encodeURIComponent('第六个中文页面')));
+  assert.deepEqual(headings(page), ['第六个中文页面']);
 });
 
 test('不存在、未公开及内容类型不匹配的路径继续返回404', async () => {

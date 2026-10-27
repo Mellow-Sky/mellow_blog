@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import type { FooterLink, Post } from '@/lib/types';
 import { isSafeSiteLink } from '@/lib/site-customization';
+import { postUrl } from '@/lib/utils';
 import styles from './AdminCustomization.module.css';
 
 type EditableLink = FooterLink & { visible?: boolean };
@@ -41,7 +42,7 @@ export default function AdminLinkListFields<T extends EditableLink>({ items, onC
     </fieldset>)}
     <div className={styles.addRow}>
       <button type="button" className="admin-button admin-button-secondary" disabled={items.length >= 20} onClick={() => onChange([...items, createItem()])}><Plus size={17} />添加{title}</button>
-      {pages.length > 0 && <label><span className="admin-sr-only">添加已有页面至{title}</span><select value="" disabled={items.length >= 20} onChange={event => { const page = pages.find(item => item.id === Number(event.target.value)); if (page) onChange([...items, createItem(page.title.slice(0, 80), `/pages/${encodeURIComponent(page.slug)}`)]); }}><option value="">从已有页面添加</option>{pages.map(page => <option value={page.id} key={page.id}>{page.title}{page.status !== 'publish' ? '（未公开）' : ''}</option>)}</select></label>}
+      {pages.length > 0 && <label><span className="admin-sr-only">添加已有页面至{title}</span><select value="" disabled={items.length >= 20} onChange={event => { const page = pages.find(item => item.id === Number(event.target.value)); if (page) onChange([...items, createItem(page.title.slice(0, 80), postUrl(page))]); }}><option value="">从已有页面添加</option>{pages.map(page => <option value={page.id} key={page.id}>{page.title}{page.status !== 'publish' ? '（未公开）' : ''}</option>)}</select></label>}
     </div>
   </div>;
 }
