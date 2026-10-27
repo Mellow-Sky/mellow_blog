@@ -7,6 +7,8 @@ interface StateRow { account_json: string | null; items_json: string; synced_at:
 interface Options { fetcher?: BangumiFetch; now?: () => number }
 const PROVIDER = 'bangumi';
 const LEASE_MILLISECONDS = 120_000;
+export const BANGUMI_SYNC_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+export const BANGUMI_SYNC_RETRY_MS = 60 * 60 * 1000;
 
 /** Server data layer. Tokens never leave this closure through the returned API. */
 export function createBangumiService(db: Database.Database, options: Options = {}) {
@@ -16,6 +18,15 @@ export function createBangumiService(db: Database.Database, options: Options = {
   function token() { return (db.prepare('SELECT secret FROM integration_secrets WHERE provider=?').get(PROVIDER) as { secret: string } | undefined)?.secret || ''; }
   function row() { return (db.prepare('SELECT account_json,items_json,synced_at,last_error FROM bangumi_state WHERE id=1').get() as StateRow | undefined) || empty; }
   function ensureRow() { db.prepare('INSERT OR IGNORE INTO bangumi_state(id) VALUES(1)').run(); }
+  function nextSyncTime(state = row()) {
+    const scheduled = db.prepare('SELECT next_run_at FROM integration_schedules WHERE provider=?').get(PROVIDER) as { next_run_at: number } | undefined;
+    if (scheduled) return scheduled.next_run_at;
+    const synced = state.synced_at ? Date.parse(state.synced_at) : NaN;
+    return Number.isFinite(synced) ? synced + BANGUMI_SYNC_INTERVAL_MS : now();
+  }
+  function schedule(timestamp: number) {
+    db.prepare('INSERT INTO integration_schedules(provider,next_run_at) VALUES(?,?) ON CONFLICT(provider) DO UPDATE SET next_run_at=excluded.next_run_at').run(PROVIDER, timestamp);
+  }
   function account(state: StateRow): BangumiAccount | null {
     if (!state.account_json) return null;
     try { return parseBangumiAccount(JSON.parse(state.account_json)); } catch { return null; }
@@ -38,6 +49,7 @@ export function createBangumiService(db: Database.Database, options: Options = {
     return {
       tokenConfigured: !!token(), account: account(state), updatedAt: state.synced_at,
       lastError: state.last_error, total: items(state).length,
+      nextSyncAt: token() ? new Date(nextSyncTime(state)).toISOString() : null,
       syncing: !!db.prepare('SELECT provider FROM integration_locks WHERE provider=? AND expires_at>?').get(PROVIDER, now()),
     };
   }
@@ -60,6 +72,7 @@ export function createBangumiService(db: Database.Database, options: Options = {
       if (input.clearToken) {
         db.transaction(() => {
           db.prepare('DELETE FROM integration_secrets WHERE provider=?').run(PROVIDER);
+          db.prepare('DELETE FROM integration_schedules WHERE provider=?').run(PROVIDER);
           db.prepare("UPDATE bangumi_state SET account_json=NULL,items_json='[]',synced_at=NULL,last_error=NULL WHERE id=1").run();
         })();
         return;
@@ -69,14 +82,16 @@ export function createBangumiService(db: Database.Database, options: Options = {
       db.transaction(() => {
         const previous = token();
         db.prepare('INSERT INTO integration_secrets(provider,secret) VALUES(?,?) ON CONFLICT(provider) DO UPDATE SET secret=excluded.secret').run(PROVIDER, replacement);
-        if (previous !== replacement || account(row())?.id !== verified.id) db.prepare("UPDATE bangumi_state SET items_json='[]',synced_at=NULL WHERE id=1").run();
+        if (previous !== replacement || account(row())?.id !== verified.id) {
+          db.prepare("UPDATE bangumi_state SET items_json='[]',synced_at=NULL WHERE id=1").run();
+          schedule(now());
+        }
         db.prepare('UPDATE bangumi_state SET account_json=?,last_error=NULL WHERE id=1').run(JSON.stringify(verified));
       })();
     });
     return adminState();
   }
-  async function sync(): Promise<BangumiAdminState> {
-    await locked(async () => {
+  async function syncCollection() {
       const secret = token();
       if (!secret) throw new BangumiError(400, '请先在后台填写 Access Token');
       const signal = AbortSignal.timeout(90_000);
@@ -100,9 +115,30 @@ export function createBangumiService(db: Database.Database, options: Options = {
         offset += page.records.length;
       } while (offset < total);
       collected.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || b.id - a.id);
-      db.prepare('UPDATE bangumi_state SET account_json=?,items_json=?,synced_at=?,last_error=NULL WHERE id=1').run(JSON.stringify(verified), JSON.stringify(collected), new Date(now()).toISOString());
-    });
+      db.transaction(() => {
+        db.prepare('UPDATE bangumi_state SET account_json=?,items_json=?,synced_at=?,last_error=NULL WHERE id=1').run(JSON.stringify(verified), JSON.stringify(collected), new Date(now()).toISOString());
+        schedule(now() + BANGUMI_SYNC_INTERVAL_MS);
+      })();
+  }
+  async function sync(): Promise<BangumiAdminState> {
+    await locked(syncCollection);
     return adminState();
+  }
+  async function syncIfDue(): Promise<BangumiAdminState | null> {
+    if (!token() || nextSyncTime() > now()) return null;
+    let synced = false;
+    try {
+      await locked(async () => {
+        // The lease serializes automatic/manual sync and credential changes across processes.
+        if (!token() || nextSyncTime() > now()) return;
+        try { await syncCollection(); synced = true; }
+        catch (error) { schedule(now() + BANGUMI_SYNC_RETRY_MS); throw error; }
+      });
+    } catch (error) {
+      if (error instanceof BangumiError && error.status === 409) return null;
+      throw error;
+    }
+    return synced ? adminState() : null;
   }
   async function updateCollection(subjectId: number, type: BangumiCollectionType): Promise<BangumiCollection> {
     if (!Number.isSafeInteger(subjectId) || subjectId < 1 || ![1, 2, 3, 4, 5].includes(type)) throw new BangumiError(400, '无效的收藏状态');
@@ -120,9 +156,9 @@ export function createBangumiService(db: Database.Database, options: Options = {
       }
       await requestBangumi(`/v0/users/-/collections/${subjectId}`, secret, { method: 'PATCH', body: { type } }, remote);
       const item: BangumiCollection = { ...current, type, updatedAt: new Date(now()).toISOString() };
-      db.prepare('UPDATE bangumi_state SET items_json=?,synced_at=?,last_error=NULL WHERE id=1').run(JSON.stringify(cached.map(v => v.id === subjectId ? item : v)), new Date(now()).toISOString());
+      db.prepare('UPDATE bangumi_state SET items_json=?,last_error=NULL WHERE id=1').run(JSON.stringify(cached.map(v => v.id === subjectId ? item : v)));
       return item;
     });
   }
-  return { snapshot, adminState, saveToken, sync, updateCollection };
+  return { snapshot, adminState, saveToken, sync, syncIfDue, updateCollection };
 }

@@ -5,6 +5,7 @@ import { ImageIcon, LoaderCircle, Sparkles, UploadCloud } from 'lucide-react';
 import { DEFAULT_HERO_IMAGE, DEFAULT_HERO_IMAGE_ALT, isBrandingImageSource } from '@/lib/branding';
 import type { Media, SiteSettings } from '@/lib/types';
 import { adminApi } from './api';
+import AdminImagePicker from './AdminImagePicker';
 import styles from './AdminBrandingFields.module.css';
 
 type ImageField = 'logo' | 'heroImage';
@@ -49,10 +50,10 @@ export function AdminBrandingFields({ draft, onChange, media, onUploadStateChang
   }
 
   function imageActions(target: ImageField, label: string) {
-    return <div className="admin-form-two">
+    return <>
       <label className="admin-upload-button">{uploading === target ? <LoaderCircle size={17} className="admin-spin" /> : <UploadCloud size={17} />}{uploading === target ? '上传中…' : `上传${label}`}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" disabled={Boolean(uploading)} onChange={event => void upload(event, target)} /></label>
-      <label><span className="admin-sr-only">从媒体库选择{label}</span><select value="" disabled={Boolean(uploading)} onChange={event => { if (event.target.value) onChange(target, event.target.value); }}><option value="">从媒体库选择{label}</option>{imageMedia.map(item => <option value={item.url} key={item.id}>{item.name}</option>)}</select></label>
-    </div>;
+      <AdminImagePicker media={imageMedia} value={draft[target]} disabled={Boolean(uploading)} label={`从媒体库选择${label}`} onChange={url => onChange(target, url)} />
+    </>;
   }
 
   return <>

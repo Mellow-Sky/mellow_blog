@@ -30,6 +30,7 @@ export interface BangumiAdminState {
   account: BangumiAccount | null;
   updatedAt: string | null;
   lastError: string | null;
+  nextSyncAt: string | null;
   syncing: boolean;
   total: number;
 }

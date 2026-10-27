@@ -34,15 +34,16 @@ export default function AdminBangumi({ settings, refresh, notify }: { settings: 
   }, []);
   useEffect(() => { mounted.current = true; void load(); return () => { mounted.current = false; }; }, [load]);
   useEffect(() => {
-    if (!state?.syncing) return;
+    if (!state?.tokenConfigured && !state?.syncing) return;
     let cancelled = false; let timer: ReturnType<typeof setTimeout>;
+    const interval = state?.syncing ? 4000 : 30_000;
     async function poll() {
       await load();
-      if (!cancelled) timer = setTimeout(poll, 4000);
+      if (!cancelled) timer = setTimeout(poll, interval);
     }
-    timer = setTimeout(poll, 4000);
+    timer = setTimeout(poll, interval);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [state?.syncing, load]);
+  }, [state?.syncing, state?.tokenConfigured, load]);
 
   async function run(operation: Exclude<Operation, null>, action: () => Promise<void>) {
     if (lock.current) return;
@@ -55,7 +56,7 @@ export default function AdminBangumi({ settings, refresh, notify }: { settings: 
     event.preventDefault(); const value = token.trim(); if (!value) return;
     void run('token', async () => {
       const result = await adminApi<BangumiAdminState>('/api/admin/bangumi', 'PUT', { token: value });
-      if (mounted.current) { setState(result); setToken(''); } notify('Access Token 已保存。');
+      if (mounted.current) { setState(result); setToken(''); } notify('Access Token 已保存，自动同步已启用。');
     });
   }
   function clearToken() {
@@ -98,6 +99,6 @@ export default function AdminBangumi({ settings, refresh, notify }: { settings: 
         <label>默认分类<select value={String(draft.bangumiDefaultStatus)} onChange={event => setDraft(current => ({ ...current, bangumiDefaultStatus: event.target.value === 'all' ? 'all' : Number(event.target.value) as 1 | 2 | 3 | 4 | 5 }))} disabled={disabled}>{statuses.map(status => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label>
         <div className={styles.inlineSave}><button type="submit" className="admin-button" disabled={disabled}>{busy === 'settings' ? <LoaderCircle size={16} className="admin-spin" /> : <Save size={16} />}保存页面设置</button></div>
       </form>
-    </div><aside className={styles.stack}><section className="admin-card admin-form"><h2>收藏同步</h2><p className={styles.sectionNote}>同步 Bangumi 中的动画收藏与观看进度。</p><button type="button" className="admin-button admin-button-secondary" disabled={disabled || loading || !state?.tokenConfigured || state.syncing} onClick={sync}>{busy === 'sync' || state?.syncing ? <LoaderCircle size={17} className="admin-spin" /> : <RefreshCw size={17} />}{busy === 'sync' || state?.syncing ? '正在同步…' : '立即同步'}</button></section></aside></div>
+    </div><aside className={styles.stack}><section className="admin-card admin-form"><h2>收藏同步</h2><p className={styles.sectionNote}>每 7 天自动同步动画收藏与观看进度，无需打开博客。同步失败会保留现有数据，并在一小时后重试。</p>{state?.tokenConfigured && <p className={styles.sectionNote}>下次自动同步：{state.nextSyncAt ? timeLabel(state.nextSyncAt) : '即将开始'}<br />立即同步成功后，将从本次重新计算 7 天。</p>}<button type="button" className="admin-button admin-button-secondary" disabled={disabled || loading || !state?.tokenConfigured || state.syncing} onClick={sync}>{busy === 'sync' || state?.syncing ? <LoaderCircle size={17} className="admin-spin" /> : <RefreshCw size={17} />}{busy === 'sync' || state?.syncing ? '正在同步…' : '立即同步'}</button></section></aside></div>
   </>;
 }

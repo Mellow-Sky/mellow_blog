@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS media (id INTEGER PRIMARY KEY, name TEXT NOT NULL, ur
 CREATE TABLE IF NOT EXISTS legacy_records (table_name TEXT NOT NULL, row_id INTEGER NOT NULL, value TEXT NOT NULL, PRIMARY KEY(table_name,row_id));
 CREATE TABLE IF NOT EXISTS integration_secrets (provider TEXT PRIMARY KEY, secret TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS integration_locks (provider TEXT PRIMARY KEY, owner TEXT NOT NULL, expires_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS integration_schedules (provider TEXT PRIMARY KEY, next_run_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS bangumi_state (
  id INTEGER PRIMARY KEY CHECK(id=1), account_json TEXT, items_json TEXT NOT NULL DEFAULT '[]',
  synced_at TEXT, last_error TEXT

@@ -9,4 +9,5 @@ export const getBangumiSnapshot = () => service().snapshot();
 export const getBangumiAdminState = () => service().adminState();
 export const saveBangumiToken = (input: { token?: string; clearToken?: boolean }) => service().saveToken(input);
 export const syncBangumi = () => service().sync();
+export const syncBangumiIfDue = () => service().syncIfDue();
 export const updateBangumiCollection = (subjectId: number, type: BangumiCollectionType) => service().updateCollection(subjectId, type);
