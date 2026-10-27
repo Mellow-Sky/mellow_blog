@@ -10,11 +10,12 @@ import { Comments } from '@/components/comments';
 import { ReadingProgress, Reveal } from '@/components/motion';
 import { PostCover } from '@/components/post-cover';
 import { postExcerpt, coverFor, date, postUrl, readTime } from '@/lib/utils';
+import { decodePageSlug } from '@/lib/route-slug';
 export const dynamic = 'force-dynamic';
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> { const p = getPost((await params).slug); return p ? { title: p.title, description: postExcerpt(p).slice(0, 155), alternates: { canonical: postUrl(p) }, openGraph: { type: 'article', title: p.title, publishedTime: new Date(p.createdAt * 1000).toISOString(), images: p.cover ? [p.cover] : [] } } : { title: '文章未找到' }; }
 export default async function ArticlePage({ params }: Props) {
-  const post = getPost((await params).slug);
+  const post = getPost(decodePageSlug((await params).slug));
   if (!post || post.type !== 'post') notFound();
   const settings = getSettings(), comments = getComments(post.id);
   const posts = getPosts(), index = posts.findIndex(p => p.id === post.id), next = posts[index + 1], previous = posts[index - 1];

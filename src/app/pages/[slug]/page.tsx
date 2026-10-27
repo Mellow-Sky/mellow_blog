@@ -5,11 +5,12 @@ import { ArticleContent } from '@/components/content';
 import { Comments } from '@/components/comments';
 import { ReadingProgress } from '@/components/motion';
 import Link from 'next/link';
+import { decodePageSlug } from '@/lib/route-slug';
 export const dynamic = 'force-dynamic';
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> { const post = getPost((await params).slug); return { title: post?.title || '页面未找到' }; }
 export default async function Page({ params }: Props) {
-  const post = getPost((await params).slug);
+  const post = getPost(decodePageSlug((await params).slug));
   if (!post || post.type !== 'page') notFound();
   if (post.slug === 'music' || post.id === 6) redirect('/music');
   const settings = getSettings();
